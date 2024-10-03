@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap JSON Tree</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .tree-container {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .tree-node {
+            list-style-type: none;
+        }
+        .toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+        .children {
+            margin-left: 20px;
+        }
+        .disabled {
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4">JSON Tree Viewer</h1>
+        <div id="tree-container" class="tree-container border p-3 rounded"></div>
+        <button id="getSelectedData" class="btn btn-primary mt-3">Get Selected Data</button>
+        <pre id="selectedData" class="mt-3 p-3 border rounded bg-light"></pre>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class JsonTree {
+            constructor(data) {
+                this.data = data;
+                this.treeHtml = '';
+            }
+
+            buildTree(data, path = []) {
+                if (typeof data === 'object' && data !== null) {
+                    this.treeHtml += '<ul class="ps-0">';
+                    for (const key in data) {
+                        const newPath = [...path, key];
+                        const pathString = newPath.join('.');
+                        
+                        this.treeHtml += `<li class="tree-node" data-path="${pathString}">`;
+                        this.treeHtml += `<div class="form-check">
+                            <input class="form-check-input checkbox" type="checkbox" id="${pathString}" data-path="${pathString}">
+                            <label class="form-check-label" for="${pathString}">${key}</label>
+                        </div>`;
+                        
+                        if (typeof data[key] === 'object' && data[key] !== null) {
+                            this.treeHtml += `<span class="toggle badge bg-secondary me-2">[+]</span>`;
+                            this.treeHtml += '<div class="children" style="display: none;">';
+                            this.buildTree(data[key], newPath);
+                            this.treeHtml += '</div>';
+                        } else if (data[key] !== null) {
+                            this.treeHtml += `<span class="badge bg-light text-dark">${data[key]}</span>`;
+                        }
+                        this.treeHtml += '</li>';
+                    }
+                    this.treeHtml += '</ul>';
+                }
+            }
+            
+            renderTree(containerId) {
+                this.buildTree(this.data);
+                document.getElementById(containerId).innerHTML = this.treeHtml;
+                this.addEventListeners();
+            }
+
+            addEventListeners() {
+                const checkboxes = document.querySelectorAll('.checkbox');
+                const toggleElements = document.querySelectorAll('.toggle');
+
+                toggleElements.forEach(toggle => {
+                    toggle.addEventListener('click', function() {
+                        toggleNode(this);
+                    });
+                });
+
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', (event) => this.handleCheckboxChange(event));
+                });
+
+                document.getElementById('getSelectedData').addEventListener('click', () => {
+                    const selectedData = this.getSelectedData();
+                    document.getElementById('selectedData').textContent = JSON.stringify(selectedData, null, 2);
+                });
+            }
+
+            handleCheckboxChange(event) {
+                const checkbox = event.target;
+                const isChecked = checkbox.checked;
+                const path = checkbox.getAttribute('data-path');
+                const childCheckboxes = document.querySelectorAll(`.checkbox[data-path^="${path}."]`);
+
+                childCheckboxes.forEach(childCheckbox => {
+                    childCheckbox.checked = isChecked;
+                    childCheckbox.disabled = isChecked;
+                    childCheckbox.parentElement.classList.toggle('disabled', isChecked);
+                });
+            }
+
+            getSelectedData() {
+                const selectedData = {};
+                const checkboxes = document.querySelectorAll('.checkbox:checked');
+                checkboxes.forEach(checkbox => {
+                    const path = checkbox.getAttribute('data-path').split('.');
+                    this.addSelectedData(selectedData, path, this.data);
+                });
+                return this.removeNulls(selectedData);
+            }
+
+            addSelectedData(selectedData, path, data) {
+                const key = path[0];
+                if (path.length === 1) {
+                    selectedData[key] = data[key];
+                } else {
+                    if (!selectedData[key]) {
+                        selectedData[key] = Array.isArray(data[key]) ? [] : {};
+                    }
+                    this.addSelectedData(selectedData[key], path.slice(1), data[key]);
+                }
+            }
+
+            removeNulls(obj) {
+                const isArray = Array.isArray(obj);
+                for (const key in obj) {
+                    if (obj[key] === null) {
+                        if (isArray) {
+                            obj.splice(key, 1);
+                        } else {
+                            delete obj[key];
+                        }
+                    } else if (typeof obj[key] === 'object') {
+                        obj[key] = this.removeNulls(obj[key]);
+                        if (Object.keys(obj[key]).length === 0) {
+                            if (isArray) {
+                                obj.splice(key, 1);
+                            } else {
+                                delete obj[key];
+                            }
+                        }
+                    }
+                }
+                return isArray ? obj.filter(item => item !== undefined) : obj;
+            }
+        }
+
+        function toggleNode(toggle) {
+            const childrenDiv = toggle.nextElementSibling;
+            if (childrenDiv) {
+                const isCollapsed = childrenDiv.style.display === 'none';
+                childrenDiv.style.display = isCollapsed ? 'block' : 'none';
+                toggle.textContent = isCollapsed ? '[-]' : '[+]';
+                toggle.classList.toggle('bg-secondary', !isCollapsed);
+                toggle.classList.toggle('bg-primary', isCollapsed);
+            }
+        }
+
+        // Sample JSON data
+        const sampleData = {
+            "bots": {
+              "Names":["musa","pyro"],
+              "Twitter": {
+                "bot_001": {
+                  "name": "TwitterBot1",
+                  "config": {
+                    "appKey": "your_app_key_1",
+                    "appSecret": "your_app_secret_1",
+                    "accessToken": "your_access_token_1",
+                    "accessSecret": "your_access_secret_1",
+                    "lambdaFunctionName": "TwitterBotFunction1"
+                  }
+                },
+                "bot_002": {
+                  "name": "TwitterBot2",
+                  "config": {
+                    "appKey": "your_app_key_2",
+                    "appSecret": "your_app_secret_2",
+                    "accessToken": "your_access_token_2",
+                    "accessSecret": "your_access_secret_2",
+                    "lambdaFunctionName": "TwitterBotFunction2"
+                  }
+                }
+              },
+              "Discord": {
+                "bot_003": {
+                  "name": "DiscordBot1",
+                  "config": {
+                    "token": "your_discord_bot_token_1",
+                    "channelId": "your_channel_id_1",
+                    "commandPrefix": "!"
+                  }
+                },
+                "bot_004": {
+                  "name": "DiscordBot2",
+                  "config": {
+                    "token": "your_discord_bot_token_2",
+                    "channelId": "your_channel_id_2",
+                    "commandPrefix": "!"
+                  }
+                }
+              }
+            },
+            "globalSettings": {
+              "logLevel": "info",
+              "maxRetries": 3
+            }
+          };
+
+        // Initialize and render the tree
+        const jsonTree = new JsonTree(sampleData);
+        jsonTree.renderTree('tree-container');
+    </script>
+</body>
+</html>

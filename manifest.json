@@ -1,0 +1,28 @@
+{
+  "manifest_version": 2,
+  "name": "Website Categorizer",
+  "version": "1.0",
+  "description": "Categorizes websites automatically and manually",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "storage",
+    "<all_urls>"
+  ],
+  "browser_action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": "favicon.ico"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js","data/data.js"]
+    }
+  ]
+}

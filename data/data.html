@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Filtered Data Table</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            word-wrap: break-word;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        td {
+            vertical-align: top;
+        }
+    </style>
+    <link href="/static/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+
+</head>
+<body>
+
+<table id="data-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>URL</th>
+            <th>Classifier Result</th>
+            <th>Domain Name</th>
+            <th>IP Address</th>
+            <th>Server Location</th>
+            <th>Addresses</th>
+            <th>Emails</th>
+            <th>Phone Numbers</th>
+            <th>Social Links</th>
+            <th>Flagged</th>
+            <th>Saved</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Data rows will be inserted here -->
+    </tbody>
+</table>
+
+<script src="data.js"></script>
+</body>
+</html>
